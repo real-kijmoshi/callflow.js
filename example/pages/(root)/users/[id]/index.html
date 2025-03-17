@@ -1,0 +1,95 @@
+<style>
+  #container {
+    width: 100%;
+    max-width: 700px;
+    margin: 50px auto;
+    padding: 20px;
+    background: linear-gradient(
+      135deg,
+      rgba(33, 34, 36, 1) 0%,
+      rgba(30, 31, 35, 1) 100%
+    );
+    color: #fff;
+    border-radius: 15px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    font-family: "Arial", sans-serif;
+  }
+
+  #container h1 {
+    font-size: 2.5rem;
+    color: #61dafb;
+    margin-bottom: 10px;
+    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.6);
+  }
+
+  #user-name-header {
+    font-size: 1.8rem;
+    color: #61dafb;
+    margin-top: 10px;
+    font-weight: bold;
+  }
+
+  #user-movies-list {
+    list-style-type: none;
+    padding: 0;
+    margin-top: 20px;
+    font-size: 1.2rem;
+    color: #ddd;
+    text-align: left;
+  }
+
+  #user-movies-list li {
+    margin: 8px 0;
+    padding: 8px;
+    background-color: rgba(97, 218, 251, 0.2);
+    border-radius: 8px;
+    transition:
+      background-color 0.3s ease,
+      transform 0.3s ease;
+  }
+
+  #user-movies-list li:hover {
+    background-color: rgba(97, 218, 251, 0.4);
+    transform: translateX(5px);
+  }
+
+  .loading {
+    font-size: 1.2rem;
+    color: #61dafb;
+    text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.5);
+  }
+</style>
+
+<div id="container">
+  <h1>User Page</h1>
+  <h1 id="user-name-header">Loading user data...</h1>
+  <ul id="user-movies-list"></ul>
+</div>
+
+<script>
+  // {id} is a dynamic route parameter
+  const userId = "{id}"; // Replace {id} dynamically based on user data
+
+  callflow.fn
+    .GetUser(userId)
+    .then((res) => {
+      console.log(res);
+
+      // Updating user info and favorite movies
+      document.getElementById("user-name-header").innerText =
+        res.username + "'s favorite movies:";
+
+      const moviesList = document.getElementById("user-movies-list");
+      res.favoriteMovies.forEach((movie) => {
+        const movieItem = document.createElement("li");
+        movieItem.innerText = movie;
+        moviesList.appendChild(movieItem);
+      });
+    })
+    .catch((error) => {
+      console.error("Error fetching user data:", error);
+      document.getElementById("user-name-header").innerText =
+        "Error fetching user data";
+    });
+</script>

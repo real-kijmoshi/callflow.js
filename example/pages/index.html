@@ -1,0 +1,47 @@
+<div class="content">
+  <p id="example-variables"></p>
+  <p class="info">
+    Open the console to see the request sent to the server while executing the
+    code below.
+  </p>
+  <p class="callflow-info">This is powered by <strong>Callflow.js</strong>!</p>
+</div>
+
+<span
+  style="
+    color: #61dafb;
+    font-size: 1.2rem;
+    margin-top: 20px;
+    display: block;
+    text-align: center;
+  "
+>
+  <strong>Example:</strong>
+
+  <p style="color: #ddd; font-size: 1rem; margin-top: 10px; text-align: center">
+    (async () => { const res = await callflow.fn.HelloWorld("hello from
+    client"); console.log(res); })();
+  </p>
+</span>
+
+<button
+  style="
+    background-color: #61dafb;
+    color: #282c34;
+    padding: 10px;
+    border-radius: 8px;
+    margin-top: 20px;
+    font-size: 1rem;
+    cursor: pointer;
+  "
+  onclick="window.location.href = '/users/User123';"
+>
+  Visit /users/User123 to see the dynamic route in action
+</button>
+
+<script>
+  (async () => {
+    const res = await callflow.fn.HelloWorld("hello from client");
+    console.log(res);
+  })();
+</script>
