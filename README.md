@@ -24,19 +24,19 @@ npm install callflow.js
 1. Initialize a new project:
 
 ```bash
-npx callflow init
+npx callflow.js init
 ```
 
 2. Start the development server:
 
 ```bash
-npx callflow dev
+npx callflow.js dev
 ```
 
 3. Start the production server:
 
 ```bash
-npx callflow start
+npx callflow.js start
 ```
 
 ## Project Structure

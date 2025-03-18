@@ -1,4 +1,4 @@
-const callflow = require("callflow");
+const callflow = require("callflow.js");
 
 const users = [
   {
