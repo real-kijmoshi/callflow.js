@@ -7,6 +7,6 @@
     "start": "callflow start"
   },
   "dependencies": {
-    "callflow": "^0.5.4"
+    "callflow.js": "^0.9.3"
   }
 }
