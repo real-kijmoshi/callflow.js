@@ -1,0 +1,9 @@
+{
+  "name": "site",
+  "version": "1.0.0",
+  "description": "Your awsome callflow app",
+  "scripts": {
+    "dev": "callflow dev",
+    "start": "callflow start"
+  }
+}

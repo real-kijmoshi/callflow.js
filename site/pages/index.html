@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CallFlow.js - Modern File-based Routing Framework</title>
+  <style>
+    /* Base styles */
+    :root {
+      --primary: #0ea5e9;
+      --secondary: #0284c7;
+      --accent: #38bdf8;
+      --dark: #0f172a;
+      --darker: #020617;
+      --light: #f8fafc;
+      --gray-100: #f1f5f9;
+      --gray-200: #e2e8f0;
+      --gray-300: #cbd5e1;
+      --gray-600: #475569;
+      --gray-700: #334155;
+      --gray-800: #1e293b;
+      --gray-900: #0f172a;
+      --yellow: #fbbf24;
+      --code-bg: #1e293b;
+      --code-text: #e2e8f0;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background-color: var(--darker);
+      color: var(--gray-200);
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* Navigation */
+    .navbar {
+      background-color: rgba(2, 6, 23, 0.8);
+      backdrop-filter: blur(10px);
+      position: fixed;
+      width: 100%;
+      top: 0;
+      z-index: 100;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--gray-800);
+    }
+
+    .nav-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-size: 1.8rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 24px;
+    }
+
+    .nav-link {
+      color: var(--gray-300);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.3s ease;
+    }
+
+    .nav-link:hover {
+      color: var(--primary);
+    }
+
+    /* Hero section */
+    .hero {
+      background: linear-gradient(180deg, var(--darker), var(--dark));
+      padding: 160px 0 100px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at 50% 50%, rgba(14, 165, 233, 0.15), transparent 70%);
+      z-index: 1;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+    }
+
+    .hero h1 {
+      font-size: 4rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -1px;
+      line-height: 1.1;
+    }
+
+    .hero p {
+      font-size: 1.25rem;
+      color: var(--gray-300);
+      max-width: 700px;
+      margin: 0 auto 2rem;
+    }
+
+    .hero-buttons {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      margin-top: 32px;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-block;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      font-size: 1rem;
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+      box-shadow: 0 4px 14px rgba(14, 165, 233, 0.4);
+    }
+
+    .btn-primary:hover {
+      background-color: var(--secondary);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(14, 165, 233, 0.5);
+    }
+
+    .btn-outline {
+      background-color: transparent;
+      color: var(--primary);
+      border: 2px solid var(--primary);
+    }
+
+    .btn-outline:hover {
+      background-color: rgba(14, 165, 233, 0.1);
+      transform: translateY(-2px);
+    }
+
+    /* Features section */
+    .features {
+      padding: 80px 0;
+    }
+
+    .section-title {
+      text-align: center;
+      margin-bottom: 50px;
+    }
+
+    .section-title h2 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 16px;
+    }
+
+    .section-title p {
+      font-size: 1.1rem;
+      color: var(--gray-300);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      margin-top: 40px;
+    }
+
+    .feature-card {
+      background-color: var(--gray-900);
+      border-radius: 12px;
+      padding: 32px;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      border: 1px solid var(--gray-800);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .feature-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      border-color: var(--primary);
+    }
+
+    .feature-icon {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+
+    .feature-icon svg {
+      width: 28px;
+      height: 28px;
+      color: white;
+    }
+
+    .feature-card h3 {
+      font-size: 1.5rem;
+      margin-bottom: 12px;
+      color: var(--light);
+    }
+
+    .feature-card p {
+      color: var(--gray-300);
+      font-size: 1rem;
+    }
+
+    /* Installation section */
+    .installation {
+      padding: 80px 0;
+      background-color: var(--gray-900);
+    }
+
+    .code-block {
+      background-color: var(--code-bg);
+      border-radius: 12px;
+      padding: 24px;
+      margin: 24px 0;
+      overflow-x: auto;
+      border: 1px solid var(--gray-700);
+    }
+
+    .code-block code {
+      font-family: 'Fira Code', 'Courier New', monospace;
+      color: var(--code-text);
+      font-size: 1rem;
+    }
+
+    /* Project structure */
+    .project-structure {
+      padding: 80px 0;
+    }
+
+    /* CLI commands */
+    .cli-commands {
+      padding: 80px 0;
+      background-color: var(--gray-900);
+    }
+
+    .command-list {
+      list-style-type: none;
+      margin-top: 24px;
+    }
+
+    .command-list li {
+      margin-bottom: 16px;
+      display: flex;
+      align-items: flex-start;
+    }
+
+    .command-list code {
+      background-color: var(--code-bg);
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin-right: 16px;
+      font-family: 'Fira Code', 'Courier New', monospace;
+      color: var(--accent);
+    }
+
+    .command-list p {
+      color: var(--gray-300);
+    }
+
+    /* Footer */
+    .footer {
+      background-color: var(--darker);
+      padding: 60px 0 40px;
+      text-align: center;
+      border-top: 1px solid var(--gray-800);
+    }
+
+    .footer p {
+      color: var(--gray-300);
+      font-size: 0.9rem;
+    }
+
+    .footer a {
+      color: var(--primary);
+      text-decoration: none;
+      transition: color 0.3s ease;
+    }
+
+    .footer a:hover {
+      color: var(--accent);
+      text-decoration: underline;
+    }
+
+    /* Highlight */
+    .highlight {
+      color: var(--primary);
+      background-color: rgba(14, 165, 233, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+
+    .demo {
+      background: linear-gradient(180deg, var(--gray-900), var(--dark));
+      color: var(--light);
+      padding: 60px 0;
+      text-align: center;
+      position: relative;
+      border-top: 1px solid var(--gray-800);
+      border-bottom: 1px solid var(--gray-800);
+    }
+
+    .demo::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(circle at center, rgba(14, 165, 233, 0.1), transparent 70%);
+      pointer-events: none;
+    }
+
+
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.6s ease forwards;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .hero h1 {
+        font-size: 3rem;
+      }
+      
+      .feature-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .hero-buttons {
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      .btn {
+        width: 100%;
+        max-width: 300px;
+        text-align: center;
+      }
+    }
+
+    
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container nav-container">
+      <div class="logo">CallFlow.js</div>
+      <div class="nav-links">
+        <a href="#features" class="nav-link">Features</a>
+        <a href="#installation" class="nav-link">Installation</a>
+        <a href="#quickstart" class="nav-link">Quick Start</a>
+        <a href="https://github.com/real-kijmoshi/callflow.js" class="nav-link">GitHub</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="container hero-content fade-in">
+      <h1>Welcome to CallFlow.js</h1>
+      <p>A modern, lightweight, file-based routing framework for building server-rendered applications using Node.js. With minimal configuration, CallFlow makes it easy to develop fast, scalable applications.</p>
+      <div class="hero-buttons">
+        <a href="#installation" class="btn btn-primary">Get Started</a>
+        <a href="https://github.com/real-kijmoshi/callflow.js" class="btn btn-outline">GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <section 
+    style="background-color: var(--gray-900); color: var(--light); padding: 40px 0; text-align: center;"
+    class="fade-in demo section-title fade-in"
+  >
+      <h2 class="fade-in section-title">
+        Demo (Counter & Uptime using CallFlow API)
+      </h2>
+      <p>
+        Counter: <span id="counter" style="font-weight: 600;">0</span>
+        Uptime: <span id="uptime" style="font-weight: 600;">0</span>
+      </p>
+
+      <button onclick="increment()" class="btn btn-primary">Increment</button>
+  </section>
+  
+  <!-- Features Section -->
+  <section id="features" class="features">
+    <div class="container">
+      <div class="section-title fade-in">
+        <h2>Why Choose CallFlow?</h2>
+        <p>Built for modern web development workflows, CallFlow offers powerful features with minimal overhead.</p>
+      </div>
+      <div class="feature-grid">
+        <div class="feature-card fade-in">
+          <div class="feature-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+            </svg>
+          </div>
+          <h3>File-based Routing</h3>
+          <p>Just add HTML files to the <span class="highlight">pages</span> directory to create routes, making routing simple and intuitive.</p>
+        </div>
+        <div class="feature-card fade-in">
+          <div class="feature-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+            </svg>
+          </div>
+          <h3>Layouts Support</h3>
+          <p>Reuse layouts across multiple pages with <span class="highlight">_layout.html</span> to maintain consistency while keeping things flexible.</p>
+        </div>
+        <div class="feature-card fade-in">
+          <div class="feature-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <h3>Dynamic Routes</h3>
+          <p>Using <span class="highlight">[paramName]</span> folder naming, you can easily create dynamic routes that handle parameters.</p>
+        </div>
+        <div class="feature-card fade-in">
+          <div class="feature-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+            </svg>
+          </div>
+          <h3>Hot Reloading</h3>
+          <p>CallFlow comes with built-in hot reloading during development, making your workflow more efficient and responsive.</p>
+        </div>
+        <div class="feature-card fade-in">
+          <div class="feature-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <h3>Middleware Support</h3>
+          <p>Add middleware to handle requests at various levels of your routing structure, giving you full control over the app.</p>
+        </div>
+        <div class="feature-card fade-in">
+          <div class="feature-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+            </svg>
+          </div>
+          <h3>Zero Configuration</h3>
+          <p>Get started quickly with sensible defaults, but easily customize with <span class="highlight">callflow.config.js</span> when needed.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Installation Section -->
+  <section id="installation" class="installation">
+    <div class="container">
+      <div class="section-title fade-in">
+        <h2>Installation</h2>
+        <p>Get started with CallFlow.js in seconds.</p>
+      </div>
+      <div class="code-block fade-in">
+        <code>npm install callflow.js</code>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quick Start Section -->
+  <section id="quickstart" class="project-structure">
+    <div class="container">
+      <div class="section-title fade-in">
+        <h2>Quick Start</h2>
+        <p>Follow these steps to get your CallFlow.js application up and running.</p>
+      </div>
+      <div class="code-block fade-in">
+        <code>npx callflow init</code>
+      </div>
+      <p>Start the development server:</p>
+      <div class="code-block fade-in">
+        <code>npx callflow dev</code>
+      </div>
+      <p>To start the production server:</p>
+      <div class="code-block fade-in">
+        <code>npx callflow start</code>
+      </div>
+    </div>
+  </section>
+
+  <!-- Project Structure Section -->
+  <section class="project-structure">
+    <div class="container">
+      <div class="section-title fade-in">
+        <h2>Project Structure</h2>
+        <p>CallFlow.js follows a straightforward project structure that is easy to understand and navigate.</p>
+      </div>
+      <div class="code-block fade-in" style="overflow-x: auto;">
+        <code style="white-space: pre;">
+my-callflow-app/
+├── pages/
+│   ├── index.html           # Home page (/)
+│   ├── _layout.html         # Root layout
+│   ├── middleware.js        # Root middleware
+│   ├── 404.html             # Custom 404 page
+│   ├── about/
+│   │   ├── index.html       # About page (/about)
+│   │   └── _layout.html     # Layout for about pages
+│   ├── blog/
+│   │   ├── [slug]/          # Dynamic route
+│   │   │   ├── index.html   # Blog post page (/blog/any-slug)
+│   │   │   └── middleware.js # Middleware for specific blog posts
+│   │   └── index.html       # Blog index page (/blog)
+│   └── (admin)/             # Organization folder (not part of the URL)
+│       └── index.html       # Admin page accessible at /
+├── package.json
+└── callflow.config.js       # CallFlow configuration</code>
+      </div>
+    </div>
+  </section>
+
+  <!-- CLI Commands Section -->
+  <section class="cli-commands">
+    <div class="container">
+      <div class="section-title fade-in">
+        <h2>CLI Commands</h2>
+        <p>CallFlow.js provides a set of useful CLI commands to help you work efficiently.</p>
+      </div>
+      <div class="command-list fade-in">
+        <li>
+          <code>callflow init</code>
+          <p>Initialize a new CallFlow.js project with the default structure and configuration.</p>
+        </li>
+        <li>
+          <code>callflow dev</code>
+          <p>Start the development server with hot reloading enabled for rapid development.</p>
+        </li>
+        <li>
+          <code>callflow start</code>
+          <p>Start the production server optimized for performance and reliability.</p>
+        </li>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <p>© 2025 CallFlow.js. All rights reserved.</p>
+      <p>For more information, visit the <a href="https://github.com/real-kijmoshi/callflow.js" target="_blank">GitHub repository</a>.</p>
+    </div>
+  </footer>
+
+  <script>
+    // Simple fade-in animation for elements
+    document.addEventListener('DOMContentLoaded', () => {
+      const fadeElements = document.querySelectorAll('.fade-in');
+      
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.style.opacity = 1;
+            entry.target.style.transform = 'translateY(0)';
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1 });
+      
+      fadeElements.forEach(element => {
+        element.style.opacity = 0;
+        element.style.transform = 'translateY(20px)';
+        element.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        observer.observe(element);
+      });
+    });
+
+    // Counter and uptime
+    setInterval(() => {
+      callflow.fn.getClicks().then(clicks => {
+        document.getElementById('counter').textContent = clicks;
+      });
+    }, 400);
+
+    function increment() {
+      callflow.fn.click().then(clicks => {
+        document.getElementById('counter').textContent = clicks;
+      });
+    }
+
+    const parseTime = (time) => {
+      const hours = Math.floor(time / 3600);
+      const minutes = Math.floor((time % 3600) / 60);
+      const seconds = Math.floor(time % 60);
+      return `${hours}h ${minutes}m ${seconds}s`;
+    };
+
+
+    const uptime = callflow.fn.uptime().then(uptime => {
+      document.getElementById('uptime').textContent = parseTime(uptime);
+    });
+
+    setInterval(uptime, 5000);
+    uptime();
+  </script>
+</body>
+</html>
