@@ -186,14 +186,14 @@ CallFlow provides a CLI with the following commands:
 
 ### MAJOR
 
-- [x] all \_layout.html files are being renderd - fixed in 0.9.3
-- [x] all middleware.js files are being renderd - fixed in 0.9.3
+- [x] all \_layout.html files are being renderd - fixed in 0.9.2
+- [x] all middleware.js files are being renderd - fixed in 0.9.2
 
 ### MINOR
 
-- [x] name.html is not renderd insted need to use /name/index.html - fixed in 0.9.3
-- [x] [slug].html is not renderd insted need to use /slug/index.html - fixed in 0.9.3
-- [x] (folder) may not work as expected - fixed in 0.9.3
+- [x] name.html is not renderd insted need to use /name/index.html - fixed in 0.9.2
+- [x] [slug].html is not renderd insted need to use /slug/index.html - fixed in 0.9.2
+- [x] (folder) may not work as expected - fixed in 0.9.2
 
 ## future features
 
@@ -205,7 +205,7 @@ CallFlow provides a CLI with the following commands:
 
 ## current version
 
-- 0.9.3
+- 0.9.2
 
 
 ### new features
