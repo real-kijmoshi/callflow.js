@@ -99,16 +99,16 @@ Create layouts to reuse common UI elements across pages:
 
 ```html
 <!-- pages/_layout.html -->
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-  <title>My CallFlow App</title>
-</head>
-<body>
-  <header>Common Header</header>
-  <%content%>
-  <footer>Common Footer</footer>
-</body>
+  <head>
+    <title>My CallFlow App</title>
+  </head>
+  <body>
+    <header>Common Header</header>
+    <%content%>
+    <footer>Common Footer</footer>
+  </body>
 </html>
 ```
 
@@ -120,16 +120,16 @@ Add middleware to handle requests at different levels of your route hierarchy:
 
 ```javascript
 // pages/middleware.js
-module.exports = function(req, res) {
+module.exports = function (req, res) {
   // This middleware runs for all routes
-  console.log('Request received:', req.path);
-  
+  console.log("Request received:", req.path);
+
   // Optional: end the request early
   if (!req.headers.authorization) {
-    res.status(401).send('Unauthorized');
+    res.status(401).send("Unauthorized");
     return;
   }
-  
+
   // Continue to the next middleware or page handler
 };
 ```
@@ -139,18 +139,20 @@ module.exports = function(req, res) {
 Configure your CallFlow application in `callflow.config.js`:
 
 ```javascript
-const callflow = require('callflow.js');
+const callflow = require("callflow.js");
 
 // Expose server-side functions to the client
-callflow.exposeFunction('getCurrentUser', [
-  { name: 'userId', type: 'string' }
-], async function(req, res, userId) {
-  // Fetch user data from database
-  return { id: userId, name: 'John Doe' };
-});
-  
+callflow.exposeFunction(
+  "getCurrentUser",
+  [{ name: "userId", type: "string" }],
+  async function (req, res, userId) {
+    // Fetch user data from database
+    return { id: userId, name: "John Doe" };
+  },
+);
+
 // Expose variables to the client
-callflow.exposeVariable('apiVersion', '1.0.0');
+callflow.exposeVariable("apiVersion", "1.0.0");
 ```
 
 Access exposed functions and variables in the browser:
@@ -158,12 +160,12 @@ Access exposed functions and variables in the browser:
 ```html
 <script>
   // Access exposed functions
-  callflow.fn.getCurrentUser('123').then(user => {
-    console.log('Current user:', user);
+  callflow.fn.getCurrentUser("123").then((user) => {
+    console.log("Current user:", user);
   });
-  
+
   // Access exposed variables
-  console.log('API Version:', callflow.vars.apiVersion);
+  console.log("API Version:", callflow.vars.apiVersion);
 </script>
 ```
 
@@ -183,28 +185,31 @@ CallFlow provides a CLI with the following commands:
 ## current issues
 
 ### MAJOR
-- [ ] all _layout.html files are being renderd
-- [ ] all middleware.js files are being renderd
+
+- [x] all \_layout.html files are being renderd - fixed in 0.9.3
+- [x] all middleware.js files are being renderd - fixed in 0.9.3
 
 ### MINOR
-- [ ] name.html is not renderd insted need to use /name/index.html
-- [ ] [slug].html is not renderd insted need to use /slug/index.html
-- [ ] (folder) may not work as expected
+
+- [x] name.html is not renderd insted need to use /name/index.html - fixed in 0.9.3
+- [x] [slug].html is not renderd insted need to use /slug/index.html - fixed in 0.9.3
+- [x] (folder) may not work as expected - fixed in 0.9.3
 
 ## future features
+
 - [ ] authentication - expected in v1.0.0
 - [ ] database connection - expected in v1.0.0
 - [ ] custom plugins - expected in v1.0.0
 - [ ] file upload - expected in v1.1.0
 - [ ] file download - expected in v1.1.0
 
-## current version 
-- 0.9.0
+## current version
 
-### fixed issues
-x
+- 0.9.3
+
 
 ### new features
+
 x
 
 ## License

@@ -1,10 +1,14 @@
 {
   "name": "callflow.js",
   "main": "callflow.js",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "author": {
     "name": "kijmoshi",
     "url": "https://kijmoshi.xyz"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/real-kijmoshi/callflow.js"
   },
   "bin": {
     "callflow": "./bin/callflow.js"

@@ -4,7 +4,6 @@ const log = require("./src/utils/logger");
 const path = require("path");
 const callflowModule = require("./callflow");
 
-
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -52,7 +51,6 @@ app.post("/__callflow_server__/invoke/:function", (req, res) => {
   }
 });
 
-
 app.get("*", (req, res) => {
   renderFile(req, res, callflow);
 });
@@ -63,12 +61,12 @@ callflowModule._setCallbacks(
   },
   (name, value) => {
     callflow.exposedVariables[name] = value;
-  }
+  },
 );
 
 require(process.env.user_dir + "/callflow.config.js");
 
-if(process.env.NODE_ENV === "development") {
+if (process.env.NODE_ENV === "development") {
   const chokidar = require("chokidar");
   const watcher = chokidar.watch(process.env.user_dir, {
     ignored: /(^|[\/\\])\../,
@@ -78,19 +76,21 @@ if(process.env.NODE_ENV === "development") {
   watcher.on("change", (path) => {
     log.info(`File ${path} has been changed`);
     log.info("Reloading callflow.config.js");
-    delete require.cache[require.resolve(process.env.user_dir + "/callflow.config.js")];
-    
+    delete require.cache[
+      require.resolve(process.env.user_dir + "/callflow.config.js")
+    ];
+
     // Reset the callflow state
     callflow.exposedFunctions = {};
     callflow.exposedVariables = {};
-    
+
     require(process.env.user_dir + "/callflow.config.js");
   });
 }
 
 app.listen(port, () => {
-  log.info(`-----------------------------------`)
-  log.info(`Server is running at http://localhost:${port}`)
-  log.info(`environment: ${process.env.NODE_ENV}`)
-  log.info(`-----------------------------------`)
+  log.info(`-----------------------------------`);
+  log.info(`Server is running at http://localhost:${port}`);
+  log.info(`environment: ${process.env.NODE_ENV}`);
+  log.info(`-----------------------------------`);
 });

@@ -20,292 +20,177 @@ const scripts = fs
   )
   .join("\n");
 
-const shouldIgnoreFolder = (folderName) => {
-  return folderName.startsWith("(") && folderName.endsWith(")");
-};
-
-const findLayouts = (directory) => {
-  const layoutPath = path.join(directory, "_layout.html");
-  const layouts = [];
-
-  if (fs.existsSync(layoutPath)) {
-    layouts.push(layoutPath);
-  }
-
-  return layouts;
-};
-
-const findFile = (directory, segment) => {
-  let possibleEntries = [];
-  let matchedDir = null;
-  let isParam = false;
-  let paramName = "";
-
-  try {
-    possibleEntries = fs.readdirSync(directory, { withFileTypes: true });
-  } catch (err) {
-    log.error(`Failed to read directory ${directory}: ${err.message}`);
-    return { matchedDir: null, isParam: false, paramName: "" };
-  }
-
-  for (const entry of possibleEntries) {
-    if (!entry.isDirectory()) continue;
-
-    if (shouldIgnoreFolder(entry.name)) continue;
-
-    if (entry.name === segment) {
-      matchedDir = entry;
-      break;
+const findInDir = (curpath, searchedFor) => {
+  if (!searchedFor || searchedFor === "") {
+    if (fs.existsSync(path.join(curpath, "index.html"))) {
+      return path.join(curpath, "index.html");
+    } else if (fs.existsSync(path.join(curpath, "index.htm"))) {
+      return path.join(curpath, "index.htm");
     }
-
-    if (entry.name.startsWith("[") && entry.name.endsWith("]")) {
-      matchedDir = entry;
-      isParam = true;
-      paramName = entry.name.slice(1, -1);
-    }
+    return null;
   }
 
-  return { matchedDir, isParam, paramName };
-};
+  const inDir = fs.readdirSync(curpath);
+  const files = [];
+  const dirs = [];
 
-const recursivelyFindFiles = (directory, targetFile) => {
-  let result = [];
+  inDir.forEach((file) => {
+    const fullPath = path.join(curpath, file);
+    const stats = fs.statSync(fullPath);
 
-  try {
-    const entries = fs.readdirSync(directory, { withFileTypes: true });
-
-    const targetPath = path.join(directory, targetFile);
-    if (fs.existsSync(targetPath)) {
-      result.push(targetPath);
-    }
-
-    for (const entry of entries) {
-      if (entry.isDirectory() && shouldIgnoreFolder(entry.name)) {
-        const subResults = recursivelyFindFiles(
-          path.join(directory, entry.name),
-          targetFile,
-        );
-        result = result.concat(subResults);
-      }
-    }
-  } catch (err) {
-    log.error(`Error searching for files in ${directory}: ${err.message}`);
-  }
-
-  return result;
-};
-
-function traverseAllLayouts(baseDir, relativePath = "") {
-  const layouts = [];
-  const currentDir = path.join(baseDir, relativePath);
-
-  const layoutPath = path.join(currentDir, "_layout.html");
-  if (fs.existsSync(layoutPath)) {
-    layouts.push(layoutPath);
-  }
-
-  try {
-    const entries = fs.readdirSync(currentDir, { withFileTypes: true });
-    const orgFolders = entries.filter(
-      (entry) => entry.isDirectory() && shouldIgnoreFolder(entry.name),
-    );
-
-    for (const orgFolder of orgFolders) {
-      const orgPath = path.join(relativePath, orgFolder.name);
-      const orgLayouts = traverseAllLayouts(baseDir, orgPath);
-      layouts.push(...orgLayouts);
-    }
-  } catch (err) {
-    log.error(`Error reading directory ${currentDir}: ${err.message}`);
-  }
-
-  return layouts;
-}
-
-const parseFile = (route) => {
-  const cacheKey = `route_${route}`;
-  if (fileCache.has(cacheKey)) {
-    log.debug(`Cache hit for route: ${route}`);
-    return fileCache.get(cacheKey);
-  }
-
-  const startTime = performance.now();
-  const segments = route.split("/").filter(Boolean);
-
-  let currentDir = PAGES_DIR;
-  let layouts = [];
-  let middlewares = [];
-  let params = {};
-  let matchedFile = null;
-
-  // Get all layouts from organizational folders
-  layouts = traverseAllLayouts(PAGES_DIR);
-
-  // Check for root middleware
-  const rootMiddleware = path.join(PAGES_DIR, "middleware.js");
-  if (fs.existsSync(rootMiddleware)) {
-    middlewares.push(rootMiddleware);
-  }
-
-  // Special case for root route "/"
-  if (segments.length === 0) {
-    const rootIndexPath = path.join(PAGES_DIR, "index.html");
-    if (fs.existsSync(rootIndexPath)) {
-      const result = {
-        layouts,
-        middlewares,
-        params,
-        matchedFile: rootIndexPath
-      };
-      fileCache.set(cacheKey, result);
-      
-      const endTime = performance.now();
-      log.info(`Parsed root route in ${(endTime - startTime).toFixed(2)}ms | Found ${layouts.length} layouts`);
-      
-      return result;
-    }
-  }
-
-  let pathSoFar = "";
-
-  for (let i = 0; i < segments.length; i++) {
-    const segment = segments[i];
-    pathSoFar += "/" + segment;
-
-    const { matchedDir, isParam, paramName } = findFile(currentDir, segment);
-
-    if (matchedDir) {
-      const newDir = path.join(currentDir, matchedDir.name);
-
-      if (isParam) {
-        params[paramName] = segment;
-      }
-
-      const segmentLayouts = findLayouts(newDir);
-      layouts = [...layouts, ...segmentLayouts];
-
-      try {
-        const entries = fs.readdirSync(newDir, { withFileTypes: true });
-        const orgFolders = entries.filter(
-          (entry) => entry.isDirectory() && shouldIgnoreFolder(entry.name),
-        );
-
-        for (const orgFolder of orgFolders) {
-          const orgDir = path.join(newDir, orgFolder.name);
-          const orgLayouts = findLayouts(orgDir);
-          layouts = [...layouts, ...orgLayouts];
-        }
-      } catch (err) {
-        log.error(`Error finding org layouts in ${newDir}: ${err.message}`);
-      }
-
-      const middlewarePath = path.join(newDir, "middleware.js");
-      if (fs.existsSync(middlewarePath)) {
-        middlewares.push(middlewarePath);
-      }
-
-      if (i === segments.length - 1) {
-        const pageFilePath = path.join(newDir, `${segment}.html`);
-        const indexFilePath = path.join(newDir, "index.html");
-        
-        if (fs.existsSync(pageFilePath)) {
-          matchedFile = pageFilePath;
-        } else if (fs.existsSync(indexFilePath)) {
-          matchedFile = indexFilePath;
-        } else {
-          const orgIndexFiles = recursivelyFindFiles(
-            newDir,
-            "index.html",
-          ).filter((file) => {
-            const relPath = path.relative(newDir, file);
-            const segments = relPath.split(path.sep);
-            return segments.length === 2 && shouldIgnoreFolder(segments[0]);
-          });
-
-          if (orgIndexFiles.length > 0) {
-            matchedFile = orgIndexFiles[0];
-          }
-        }
-      } else {
-        currentDir = newDir;
-      }
+    if (stats.isDirectory()) {
+      dirs.push(file);
     } else {
-      let foundInOrgFolder = false;
-
-      try {
-        const entries = fs.readdirSync(currentDir, { withFileTypes: true });
-
-        for (const entry of entries) {
-          if (entry.isDirectory() && shouldIgnoreFolder(entry.name)) {
-            const orgDir = path.join(currentDir, entry.name);
-            const orgResult = findFile(orgDir, segment);
-
-            if (orgResult.matchedDir) {
-              const newDir = path.join(orgDir, orgResult.matchedDir.name);
-
-              if (orgResult.isParam) {
-                params[orgResult.paramName] = segment;
-              }
-
-              const dirLayouts = findLayouts(newDir);
-              layouts = [...layouts, ...dirLayouts];
-
-              const middlewarePath = path.join(newDir, "middleware.js");
-              if (fs.existsSync(middlewarePath)) {
-                middlewares.push(middlewarePath);
-              }
-
-              if (i === segments.length - 1) {
-                const pageFilePath = path.join(newDir, `${segment}.html`);
-                const indexFilePath = path.join(newDir, "index.html");
-                
-                if (fs.existsSync(pageFilePath)) {
-                  matchedFile = pageFilePath;
-                } else if (fs.existsSync(indexFilePath)) {
-                  matchedFile = indexFilePath;
-                }
-              }
-
-              currentDir = newDir;
-              foundInOrgFolder = true;
-              break;
-            }
-          }
-        }
-      } catch (err) {
-        log.error(`Error searching for segment in org folders: ${err.message}`);
-      }
-
-      if (!foundInOrgFolder) {
-        if (i === segments.length - 1) {
-          const directFilePath = path.join(currentDir, `${segment}.html`);
-          if (fs.existsSync(directFilePath)) {
-            matchedFile = directFilePath;
-            break;
-          }
-        }
-        
-        log.debug(`No matching directory found for segment: ${segment}`);
-        break;
-      }
+      files.push(file);
     }
-  }
-
-  layouts.sort((a, b) => {
-    const aDepth = a.split(path.sep).length;
-    const bDepth = b.split(path.sep).length;
-    return aDepth - bDepth;
   });
 
-  const result = { layouts, middlewares, params, matchedFile };
-  fileCache.set(cacheKey, result);
+  const segment = searchedFor.split("/")[0];
+  const remainingPath = searchedFor.split("/").slice(1).join("/");
+  const isLastSegment = searchedFor.split("/").length === 1;
 
-  const endTime = performance.now();
-  log.info(
-    `Parsed route ${route} in ${(endTime - startTime).toFixed(2)}ms | Found ${layouts.length} layouts`,
-  );
+  for (const dir of dirs) {
+    if (segment === dir) {
+      const result = findInDir(path.join(curpath, dir), remainingPath);
+      if (result) return result;
+    }
+  }
 
-  return result;
+  for (const dir of dirs) {
+    if (dir.startsWith("[") && dir.endsWith("]")) {
+      const result = findInDir(path.join(curpath, dir), remainingPath);
+      if (result) return result;
+    }
+  }
+
+  for (const dir of dirs) {
+    if (dir.startsWith("(") && dir.endsWith(")")) {
+      const result = findInDir(path.join(curpath, dir), searchedFor);
+      if (result) return result;
+    }
+  }
+
+  if (isLastSegment) {
+    if (files.includes(segment + ".html")) {
+      return path.join(curpath, segment + ".html");
+    } else if (files.includes(segment + ".htm")) {
+      return path.join(curpath, segment + ".htm");
+    }
+
+    for (const file of files) {
+      if (
+        (file.startsWith("[") && file.endsWith("].html")) ||
+        (file.startsWith("[") && file.endsWith("].htm"))
+      ) {
+        return path.join(curpath, file);
+      }
+    }
+  }
+
+  return null;
+};
+
+const findLayoutsAndMiddlewaresInPath = (matchedFile) => {
+  const segments = matchedFile.split(path.sep).slice(0, -1);
+  const layouts = [];
+  const middlewares = [];
+
+  if (segments.length === 0) {
+    //check for _layout.html and _middleware.js in root
+    const layoutPath = path.join(PAGES_DIR, "_layout.html");
+    const middlewarePath = path.join(PAGES_DIR, "_middleware.js");
+
+    if (fs.existsSync(layoutPath)) {
+      layouts.push(layoutPath);
+    }
+
+    if (fs.existsSync(middlewarePath)) {
+      middlewares.push(middlewarePath);
+    }
+
+    return { layouts, middlewares };
+  }
+
+  for (let i = 0; i < segments.length; i++) {
+    const currentPath = path.join(PAGES_DIR, ...segments.slice(0, i + 1));
+    const layoutPath = path.join(currentPath, "_layout.html");
+    const middlewarePath = path.join(currentPath, "_middleware.js");
+
+    if (fs.existsSync(layoutPath)) {
+      layouts.push(layoutPath);
+    }
+
+    if (fs.existsSync(middlewarePath)) {
+      middlewares.push(middlewarePath);
+    }
+  }
+
+  return { layouts, middlewares };
+};
+
+const getParamsFromPath = (matchedFile, filePath) => {
+  const matchedParts = matchedFile.split(path.sep);
+  const fileParts = filePath
+    .split("?")[0]
+    .split("/")
+    .filter((part) => part !== "");
+  const params = {};
+
+  let filePartIndex = 0;
+
+  for (let i = 0; i < matchedParts.length; i++) {
+    const matchedPart = matchedParts[i];
+
+    if (
+      (matchedPart.startsWith("[") && matchedPart.endsWith("]")) ||
+      (matchedPart.startsWith("[") && matchedPart.endsWith("].html")) ||
+      (matchedPart.startsWith("[") && matchedPart.endsWith("].htm"))
+    ) {
+      let paramName = matchedPart.replace(/^\[|\](.html?)?$/g, "");
+
+      if (filePartIndex < fileParts.length) {
+        params[paramName] = fileParts[filePartIndex];
+        filePartIndex++;
+      }
+    } else if (
+      matchedPart !== "index.html" &&
+      matchedPart !== "index.htm" &&
+      !matchedPart.endsWith(".html") &&
+      !matchedPart.endsWith(".htm")
+    ) {
+      if (!(matchedPart.startsWith("(") && matchedPart.endsWith(")"))) {
+        if (
+          filePartIndex < fileParts.length &&
+          matchedPart === fileParts[filePartIndex]
+        ) {
+          filePartIndex++;
+        }
+      }
+    }
+  }
+
+  return params;
+};
+
+const parseFile = (filePath) => {
+  const fileParts = filePath
+    .split("?")[0]
+    .split("/")
+    .filter((part) => part !== "");
+
+
+  const matchedFile = findInDir(PAGES_DIR, fileParts.join("/"));
+
+  if (!matchedFile) {
+    return { layouts: [], middlewares: [], params: {}, matchedFile: null };
+  }
+
+  const relativePath = path.relative(PAGES_DIR, matchedFile)
+  const { layouts, middlewares } =
+    findLayoutsAndMiddlewaresInPath(relativePath);
+  const params = getParamsFromPath(relativePath, filePath);
+
+  return { layouts, middlewares, params, matchedFile };
 };
 
 const applyLayouts = (content, layoutPaths, params) => {
