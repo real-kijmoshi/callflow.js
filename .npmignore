@@ -177,3 +177,8 @@ dist
 /test
 /test/
 /test/*
+
+# site files
+/site
+/site/
+/site/*

@@ -202,10 +202,13 @@ CallFlow provides a CLI with the following commands:
 - [ ] custom plugins - expected in v1.0.0
 - [ ] file upload - expected in v1.1.0
 - [ ] file download - expected in v1.1.0
+- [ ] tailwindcss support - expected in v1.1.0
+- [ ] live variables (via tcp for things like counters) - expected in v1.2.0
+- [ ] live functions (via tcp for things like chat) - expected in v1.2.0
 
 ## current version
 
-- 0.9.2
+- 0.9.3
 
 
 ### new features
