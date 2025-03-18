@@ -5,5 +5,8 @@
   "scripts": {
     "dev": "callflow dev",
     "start": "callflow start"
+  },
+  "dependencies": {
+    "callflow": "^0.5.4"
   }
 }
