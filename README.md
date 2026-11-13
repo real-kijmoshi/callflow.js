@@ -11,7 +11,7 @@ CallFlow is a lightweight, file-based routing framework for Node.js applications
 - **Organization folders** - Group related files with parentheses folders `(folderName)`
 - **Hot reloading** - Automatically reload changes during development
 - **Exposed functions and variables** - Easily expose server-side functions and variables to the client
-- **Production-ready** - Optimized for both development and production environments
+- **Development and production modes** - Development reads updated templates on refresh; production caches templates
 
 ## Installation
 
@@ -46,7 +46,7 @@ my-callflow-app/
 ├── pages/
 │   ├── index.html           # Home page (/)
 │   ├── _layout.html         # Root layout
-│   ├── middleware.js        # Root middleware
+│   ├── _middleware.js       # Root middleware (middleware.js also supported)
 │   ├── 404.html             # Custom 404 page
 │   ├── about/
 │   │   ├── index.html       # About page (/about)
@@ -208,12 +208,28 @@ CallFlow provides a CLI with the following commands:
 
 ## current version
 
-- 0.9.3
+- 0.9.4
 
 
-### new features
+### Revival changes (unreleased)
 
-x
+- Deterministic file-based route matching with static routes taking precedence over dynamic routes.
+- Grouped root routes and nested layouts/middleware now resolve correctly.
+- Safer HTML parameter interpolation and script data serialization.
+- Async exposed functions, JSON arguments validation, same-origin browser RPC and propagating API errors.
+- Node.js regression tests and CI on Node 22 and 24.
+
+### Testing
+
+Run `npm ci && npm test` from the repository root.
+
+### Security model
+
+`callflow.exposeFunction()` exposes an HTTP endpoint: **it does not provide authentication or authorization.** Validate user permissions and input in every sensitive exposed function. Same-origin request checks are not an authorization substitute. Values in `{param}` HTML placeholders are escaped; in scripts prefer `window.__params.param`. Runtime-exposed variables are visible to all visitors: never expose secrets.
+
+### Roadmap
+
+After baseline stability: CLI init improvements; static assets and browser live reload; dependency maintenance; real authentication via optional plugins; observability and deployment recipes.
 
 ## License
 

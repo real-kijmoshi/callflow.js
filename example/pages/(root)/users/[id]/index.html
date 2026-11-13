@@ -69,7 +69,7 @@
 
 <script>
   // {id} is a dynamic route parameter
-  const userId = "{id}"; // Replace {id} dynamically based on user data
+  const userId = window.__params.id; // Safely decoded route parameter
 
   callflow.fn
     .GetUser(userId)
