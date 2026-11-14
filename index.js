@@ -1,96 +1,101 @@
+"use strict";
+
 const express = require("express");
+const chokidar = require("chokidar");
+const fs = require("node:fs");
+const path = require("node:path");
 const renderFile = require("./src/utils/renderFile");
 const log = require("./src/utils/logger");
-const path = require("path");
 const callflowModule = require("./callflow");
 
 const app = express();
 const port = process.env.PORT || 3000;
+const projectRoot = path.resolve(process.env.user_dir || process.cwd());
+const configPath = path.join(projectRoot, "callflow.config.js");
+const callflow = {
+  exposedFunctions: Object.create(null),
+  exposedVariables: Object.create(null),
+};
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-let callflow = {
-  TCP_URL: "tcp://localhost:3000",
-  HTTP_URL: "http://localhost:3000",
-  exposedFunctions: {},
-  exposedVariables: {},
-};
-
-app.get("/__callflow_server__/scripts/:script", (req, res) => {
-  let scriptPath = path.join(__dirname, "src", "scripts", req.params.script);
-  if (fs.existsSync(scriptPath)) {
-    log.debug(`Serving script: ${req.params.script}`);
-    return res.status(200).sendFile(scriptPath);
-  }
-});
-
-app.post("/__callflow_server__/invoke/:function", (req, res) => {
-  let functionName = req.params.function;
-  let functionData = callflow.exposedFunctions[functionName];
-  if (!functionData) {
-    return res.status(404).send({
-      error: "Function not found",
-    });
+app.post("/__callflow_server__/invoke/:function", async (req, res) => {
+  // Browser RPC is same-origin; consumers must still authorize sensitive actions themselves.
+  const origin = req.get("origin");
+  if (origin) {
+    try {
+      if (new URL(origin).host !== req.get("host")) {
+        return res.status(403).json({ error: "Cross-origin invocation denied" });
+      }
+    } catch {
+      return res.status(403).json({ error: "Invalid origin" });
+    }
   }
 
-  const args = req.body || [];
-  if (args.length !== functionData.args.length) {
-    return res.status(400).send({
-      error: "Invalid arguments",
-    });
+  const functionData = Object.hasOwn(callflow.exposedFunctions, req.params.function)
+    ? callflow.exposedFunctions[req.params.function]
+    : null;
+  if (!functionData) return res.status(404).json({ error: "Function not found" });
+  if (!Array.isArray(req.body) || req.body.length !== functionData.args.length) {
+    return res.status(400).json({ error: "Invalid arguments" });
   }
 
   try {
-    const result = functionData.fn(req, res, ...args);
-    return res.status(200).send({ result });
-  } catch (err) {
-    return res.status(500).send({
-      error: "Failed to execute function",
-    });
+    const result = await functionData.fn(req, res, ...req.body);
+    if (!res.headersSent) res.status(200).json({ result: result === undefined ? null : result });
+  } catch (error) {
+    log.error(`RPC ${req.params.function} failed: ${error.message}`);
+    if (!res.headersSent) res.status(500).json({ error: "Failed to execute function" });
   }
 });
 
-app.get("*", (req, res) => {
-  renderFile(req, res, callflow);
-});
+app.get("*", (req, res) => renderFile(req, res, callflow));
 
 callflowModule._setCallbacks(
   (name, args, fn) => {
+    if (typeof name !== "string" || !/^[A-Za-z_$][\w$]*$/.test(name) || !Array.isArray(args) || typeof fn !== "function") {
+      throw new TypeError("exposeFunction(name, args, fn): invalid function declaration");
+    }
     callflow.exposedFunctions[name] = { args, fn };
   },
   (name, value) => {
+    if (typeof name !== "string" || !/^[A-Za-z_$][\w$]*$/.test(name)) {
+      throw new TypeError("exposeVariable(name, value): invalid variable name");
+    }
     callflow.exposedVariables[name] = value;
   },
 );
 
-require(process.env.user_dir + "/callflow.config.js");
+function loadConfig() {
+  const previousFunctions = callflow.exposedFunctions;
+  const previousVariables = callflow.exposedVariables;
+  callflow.exposedFunctions = Object.create(null);
+  callflow.exposedVariables = Object.create(null);
+  try {
+    delete require.cache[require.resolve(configPath)];
+    require(configPath);
+  } catch (err) {
+    callflow.exposedFunctions = previousFunctions;
+    callflow.exposedVariables = previousVariables;
+    throw err;
+  }
+}
+
+if (!fs.existsSync(configPath)) {
+  throw new Error(`CallFlow config not found: ${configPath}. Run 'callflow init' first.`);
+}
+loadConfig();
 
 if (process.env.NODE_ENV === "development") {
-  const chokidar = require("chokidar");
-  const watcher = chokidar.watch(process.env.user_dir, {
-    ignored: /(^|[\/\\])\../,
-    persistent: true,
-  });
-
-  watcher.on("change", (path) => {
-    log.info(`File ${path} has been changed`);
-    log.info("Reloading callflow.config.js");
-    delete require.cache[
-      require.resolve(process.env.user_dir + "/callflow.config.js")
-    ];
-
-    // Reset the callflow state
-    callflow.exposedFunctions = {};
-    callflow.exposedVariables = {};
-
-    require(process.env.user_dir + "/callflow.config.js");
+  chokidar.watch(configPath, { ignoreInitial: true }).on("change", () => {
+    try {
+      loadConfig();
+      log.info("Reloaded callflow.config.js");
+    } catch (err) {
+      log.error(`Failed to reload callflow.config.js: ${err.message}`);
+    }
   });
 }
 
-app.listen(port, () => {
-  log.info(`-----------------------------------`);
-  log.info(`Server is running at http://localhost:${port}`);
-  log.info(`environment: ${process.env.NODE_ENV}`);
-  log.info(`-----------------------------------`);
-});
+app.listen(port, () => log.info(`CallFlow server running at http://localhost:${port} (${process.env.NODE_ENV || "production"})`));
